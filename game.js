@@ -57,7 +57,7 @@ async function initGame() {
 
 function _formatText(vocabulary, display, searchfor) {
     if(g_ShowAlwaysRomaji && (((display == "jp") || (display == "writing")) && (searchfor != "jp" && searchfor != "writing"))) {
-        return `<div style="text-align:center">${vocabulary["jp"]}</div><br><div style="text-align:center">${vocabulary["writing"]}</div>`;
+        return `<div style="text-align:center">${vocabulary["jp"]}</div><div style="text-align:center">${vocabulary["writing"]}</div>`;
     }
 
     return vocabulary[display];
@@ -83,14 +83,14 @@ function _startRound() {
     g_Vocabulary.innerHTML = _formatText(g_SelectedVocabulary, display, g_SearchFor);
     g_Vocabularies.innerHTML = "";
 
-    g_Vocabularies.appendChild(_createSpan(g_SelectedVocabulary[g_SearchFor]));
+    g_Vocabularies.appendChild(_createSpan(g_SelectedVocabulary, display));
     const randomBuffer = [random];
 
     while((g_Vocabularies.children.length < 4) && (randomBuffer.length !== g_VocabularJSON.length)) {
         var random2 = Math.floor(Math.random() * g_VocabularJSON.length);
         if(randomBuffer.find(x => x == random2) == undefined) {
             randomBuffer.push(random2);
-            g_Vocabularies.appendChild(_createSpan(g_VocabularJSON[random2][g_SearchFor]));
+            g_Vocabularies.appendChild(_createSpan(g_VocabularJSON[random2], display));
         }
     }
 
@@ -113,7 +113,7 @@ function _startTimer() {
             for (let i = 0; i < childrenArray.length; i++) {
                 const element = childrenArray[i];
                 element.onclick = null;
-                if(element.innerText == g_SelectedVocabulary[g_SearchFor])
+                if(element.dataset["text"] == g_SelectedVocabulary[g_SearchFor])
                     element.classList.add("green-gradiant");
                     // element.style.backgroundColor = "green";
             }
@@ -138,11 +138,12 @@ function _stopTimer() {
     setProgress(Math.floor(g_Time / TIMER * 100));
 }
 
-function _createSpan(text) {
+function _createSpan(vocabulary, display) {
     const span = document.createElement("span");
     // span.classList.add("red-gradiant");
     var wrongAnswer = false;
-    span.innerText = text;
+    span.dataset["text"] = vocabulary[g_SearchFor];
+    span.innerHTML = _formatText(vocabulary, g_SearchFor, display);
     span.onclick = () => {
         _stopTimer();
 
@@ -152,7 +153,7 @@ function _createSpan(text) {
             element.onclick = null;
         }
 
-        if(g_SelectedVocabulary[g_SearchFor] == text) {
+        if(g_SelectedVocabulary[g_SearchFor] == span.dataset["text"]) {
             g_Combo++;
             span.classList.add("green-gradiant");
             // span.style.backgroundColor = "green";
@@ -162,7 +163,7 @@ function _createSpan(text) {
             span.classList.add("red-gradiant");
             for (let i = 0; i < childrenArray.length; i++) {
                 const element = childrenArray[i];
-                if(element.innerText === g_SelectedVocabulary[g_SearchFor]) {
+                if(element.dataset["text"] === g_SelectedVocabulary[g_SearchFor]) {
                     // element.style.backgroundColor = "green";
                     element.classList.add("green-gradiant");
                     break;
