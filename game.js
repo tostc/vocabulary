@@ -26,7 +26,7 @@ async function initGame() {
 
     g_ComboElement.style.display = "none";
 
-    g_VocabularJSON = await fetch("/vocabularies.json").then(res => res.json());
+    g_VocabularJSON = await fetch("vocabularies.json").then(res => res.json());
 
     _startRound();
 }
