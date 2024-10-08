@@ -41,6 +41,50 @@ body {
     }
 }
 
+#settings {
+    display: block;
+
+    width: 48px;
+    height: 48px;
+
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+
+    background-image: url("images/settings.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+
+    cursor: pointer;
+
+    &:hover {
+        filter: invert(0.4);
+    }
+}
+
+#settings-dialog {
+    display: none;
+
+    /* width: 48px;
+    height: 48px; */
+
+    position: fixed;
+    left: 1rem;
+    top: calc(1rem + 48px);
+
+    padding: 1rem;
+
+    border-radius: 5px;
+
+    /* background:repeating-linear-gradient(45deg, #fff 0%, #fff 6%, #f5f5f5 6%, #f5f5f5 12%); */
+
+    /* background: repeating-linear-gradient(45deg, skyblue 0%, skyblue 12%, #9bdffa 12%, #9bdffa 24%); */
+    background:repeating-linear-gradient(45deg, #b8b8b8 0%, #b8b8b8 6%, #d9d9d9 6%, #d9d9d9 12%);
+
+    -webkit-box-shadow: 0px 8px 0px 0px #000000; 
+    box-shadow: 0px 8px 0px 0px #000000;
+}
+
 #combo {
     /* background-color: orange; */
     background:repeating-linear-gradient(45deg, orange 0%, orange 6%, #ffbf49 6%, #ffbf49 12%);
@@ -104,6 +148,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
 
     top: 50%;
     left: 50%;

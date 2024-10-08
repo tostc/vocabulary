@@ -10,6 +10,9 @@ var g_Interval = null;
 var g_Time = 0;
 var g_SearchFor = "";
 
+var g_TimerEnabled = false;
+var g_ShowAlwaysRomaji = true;
+
 const TIMER = 10;
 
 // Initializes the game!
@@ -24,6 +27,27 @@ async function initGame() {
     g_ComboElement = document.getElementById("combo");
     g_TimerElement = document.querySelector('.timer-ring-circle')
 
+    const settingsDialog = document.getElementById("settings-dialog");
+    document.getElementById("settings").addEventListener("click", () => {
+        if(settingsDialog.style.display.toLocaleLowerCase() == "none")
+            settingsDialog.style.display = "block";
+        else
+            settingsDialog.style.display = "none";
+    });
+
+    document.getElementById("timer").addEventListener("change", () => {
+        g_TimerEnabled = !g_TimerEnabled;
+        if(g_TimerEnabled)
+            _startTimer();
+        else {
+            _stopTimer();
+        }
+    });
+
+    document.getElementById("romaji").addEventListener("change", () => {
+        g_ShowAlwaysRomaji = !g_ShowAlwaysRomaji;
+    });
+
     g_ComboElement.style.display = "none";
 
     g_VocabularJSON = await fetch("vocabularies.json").then(res => res.json());
@@ -31,12 +55,16 @@ async function initGame() {
     _startRound();
 }
 
-function _startRound() {
-    if(g_Interval)
-        clearInterval(g_Interval);
+function _formatText(vocabulary, display, searchfor) {
+    if(g_ShowAlwaysRomaji && (((display == "jp") || (display == "writing")) && (searchfor != "jp" && searchfor != "writing"))) {
+        return `<div style="text-align:center">${vocabulary["jp"]}</div><br><div style="text-align:center">${vocabulary["writing"]}</div>`;
+    }
 
-    g_Time = TIMER;
-    setProgress(Math.floor(g_Time / TIMER * 100));
+    return vocabulary[display];
+}
+
+function _startRound() {
+    _stopTimer();
 
     // Pick random vocabulary
     var random = Math.floor(Math.random() * g_VocabularJSON.length);
@@ -52,7 +80,7 @@ function _startRound() {
 
     g_SearchFor = props[Math.floor(Math.random() * props.length)];
 
-    g_Vocabulary.innerText = g_SelectedVocabulary[display];
+    g_Vocabulary.innerHTML = _formatText(g_SelectedVocabulary, display, g_SearchFor);
     g_Vocabularies.innerHTML = "";
 
     g_Vocabularies.appendChild(_createSpan(g_SelectedVocabulary[g_SearchFor]));
@@ -68,11 +96,18 @@ function _startRound() {
 
     _shuffleChildren(g_Vocabularies);
 
+    if(g_TimerEnabled)
+        _startTimer();
+}
+
+function _startTimer() {
+    g_Time = TIMER;
+    setProgress(Math.floor(g_Time / TIMER * 100));
+
     g_Interval = setInterval(() => {
         g_Time--;
         if(g_Time <= 0) {
-            clearInterval(g_Interval);
-            g_Interval = null;
+            _stopTimer();
 
             var childrenArray = Array.from(g_Vocabularies.children);
             for (let i = 0; i < childrenArray.length; i++) {
@@ -93,16 +128,23 @@ function _startRound() {
     }, 1000);
 }
 
+function _stopTimer() {
+    if(g_Interval) {
+        clearInterval(g_Interval);
+        g_Interval = null;
+    }
+
+    g_Time = TIMER;
+    setProgress(Math.floor(g_Time / TIMER * 100));
+}
+
 function _createSpan(text) {
     const span = document.createElement("span");
     // span.classList.add("red-gradiant");
     var wrongAnswer = false;
     span.innerText = text;
     span.onclick = () => {
-        if(g_Interval) {
-            clearInterval(g_Interval);
-            g_Interval = null;
-        }
+        _stopTimer();
 
         var childrenArray = Array.from(g_Vocabularies.children);
         for (let i = 0; i < childrenArray.length; i++) {
