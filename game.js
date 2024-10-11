@@ -9,9 +9,13 @@ var g_Combo = 0;
 var g_Interval = null;
 var g_Time = 0;
 var g_SearchFor = "";
+var g_Probabilities = [];
 
 var g_TimerEnabled = false;
 var g_ShowAlwaysRomaji = true;
+
+const REPEAT_COUNT = 10;
+const REPEAT_COUNT_INV = 1.0 / REPEAT_COUNT;
 
 const TIMER = 10;
 
@@ -35,6 +39,14 @@ async function initGame() {
             settingsDialog.style.display = "none";
     });
 
+    const symbolTable = document.getElementById("symboltable");
+    document.getElementById("table").addEventListener("click", () => {
+        if(settingsDialog.style.display.toLocaleLowerCase() == "none")
+            symbolTable.style.display = "block";
+        else
+            symbolTable.style.display = "none";
+    });
+
     document.getElementById("timer").addEventListener("change", () => {
         g_TimerEnabled = !g_TimerEnabled;
         if(g_TimerEnabled)
@@ -51,8 +63,24 @@ async function initGame() {
     g_ComboElement.style.display = "none";
 
     g_VocabularJSON = await fetch("vocabularies.json").then(res => res.json());
+    g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
 
     _startRound();
+}
+
+function _pickRandomVocabularyIndex() {
+    const totalProbability = g_Probabilities.reduce((prev, cur) => prev + cur, 0);
+
+    var randomPropability = Math.random() * totalProbability;
+    for (let i = 0; i < g_Probabilities.length; i++) {
+        randomPropability -= g_Probabilities[i];
+        if(randomPropability < 0) {
+            g_Probabilities[i] = Math.max(g_Probabilities[i] - REPEAT_COUNT_INV, 0);
+            return i;
+        }
+    }
+
+    return 0;
 }
 
 function _formatText(vocabulary, display, searchfor) {
@@ -67,9 +95,9 @@ function _startRound() {
     _stopTimer();
 
     // Pick random vocabulary
-    var random = Math.floor(Math.random() * g_VocabularJSON.length);
+    var random = _pickRandomVocabularyIndex();//Math.floor(Math.random() * g_VocabularJSON.length);
     while(random == g_LastRandom)
-        random = Math.floor(Math.random() * g_VocabularJSON.length);
+        random = _pickRandomVocabularyIndex();//Math.floor(Math.random() * g_VocabularJSON.length);
     g_LastRandom = random;
     g_SelectedVocabulary = g_VocabularJSON[random];
 
@@ -108,6 +136,8 @@ function _startTimer() {
         g_Time--;
         if(g_Time <= 0) {
             _stopTimer();
+
+            g_Probabilities[g_LastRandom] += REPEAT_COUNT_INV;
 
             var childrenArray = Array.from(g_Vocabularies.children);
             for (let i = 0; i < childrenArray.length; i++) {
@@ -171,6 +201,7 @@ function _createSpan(vocabulary, display) {
             }
 
             wrongAnswer = true;
+            g_Probabilities[g_LastRandom] += REPEAT_COUNT_INV;
             g_Combo = 0;
         }
 
@@ -217,4 +248,25 @@ function setProgress(percent) {
   
     const offset = circumference - (percent / 100) * circumference;
     g_TimerElement.style.strokeDashoffset = offset;
+}
+
+function changeTab(event, name) {
+    const tabContents = Array.from(document.getElementsByClassName("tab-content"));
+    
+    // Hide all Tabs
+    for (const tabContent of tabContents) {
+        tabContent.style.display = "none";
+        tabContent.classList.remove("active");
+    }
+
+    // All tabs are incative
+    const tabs = Array.from(document.getElementsByClassName("tab"));
+    for (const tab of tabs)
+        tab.classList.remove("active");
+
+    const tab = document.getElementById(name);
+    tab.style.display = "block";
+    tab.classList.add("active");
+
+    event.currentTarget.classList.add("active");
 }

@@ -41,19 +41,26 @@ body {
     }
 }
 
-#settings {
+.menubar {
+    display: flex;
+    flex-direction: row;
+
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+}
+
+#settings, #table {
     display: block;
 
     width: 48px;
     height: 48px;
 
-    position: fixed;
-    left: 1rem;
-    top: 1rem;
-
     background-image: url("images/settings.svg");
     background-size: cover;
     background-repeat: no-repeat;
+
+    transition: filter .2s;
 
     cursor: pointer;
 
@@ -62,11 +69,12 @@ body {
     }
 }
 
+#table {
+    background-image: url("images/translate.svg") !important;
+}
+
 #settings-dialog {
     display: none;
-
-    /* width: 48px;
-    height: 48px; */
 
     position: fixed;
     left: 1rem;
@@ -76,9 +84,6 @@ body {
 
     border-radius: 5px;
 
-    /* background:repeating-linear-gradient(45deg, #fff 0%, #fff 6%, #f5f5f5 6%, #f5f5f5 12%); */
-
-    /* background: repeating-linear-gradient(45deg, skyblue 0%, skyblue 12%, #9bdffa 12%, #9bdffa 24%); */
     background:repeating-linear-gradient(45deg, #b8b8b8 0%, #b8b8b8 6%, #d9d9d9 6%, #d9d9d9 12%);
 
     -webkit-box-shadow: 0px 8px 0px 0px #000000; 
@@ -141,6 +146,7 @@ body {
     aspect-ratio: 1/1;
 
     border-radius: 50%;
+    word-break: break-word;
 
     font-size: 40pt;
     font-weight: bold;
@@ -178,7 +184,6 @@ body {
     width: 25%;
 
     span {
-        /* background-color: #d3d3d3; */
         padding: 1rem;
         text-align: center;
         color: black;
@@ -189,14 +194,12 @@ body {
         transition: transform .2s, background-color .2s, box-shadow .2s;
         cursor: pointer;
         font-size: 18pt;
+        word-break: break-word;
 
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-
-        /* -webkit-box-shadow: 0px 8px 0px 0px #000000; 
-        box-shadow: 0px 8px 0px 0px #000000; */
 
         &:hover {
             transform: scale(1.1);
@@ -216,10 +219,14 @@ body {
 @media only screen and (max-width: 600px) {
     .timer-container, #vocabularies {
         width: 70%;
+
+        span {
+            font-size: 12pt;
+        }
     }
 
     #vocabulary {
-        font-size: 40pt;
+        font-size: 18pt;
     }
 }
 
@@ -227,6 +234,14 @@ body {
 @media only screen and (min-width: 600px) {
     .timer-container, #vocabularies {
         width: 70%;
+        
+        span {
+            font-size: 14pt;
+        }
+    }
+
+    #vocabulary {
+        font-size: 30pt;
     }
 }
 
@@ -239,6 +254,14 @@ body {
 @media only screen and (min-width: 992px) {
     .timer-container, #vocabularies {
         width: 50%;
+
+        span {
+            font-size: 18pt;
+        }
+    }
+
+    #vocabulary {
+        font-size: 40pt;
     }
 }
 
@@ -249,3 +272,99 @@ body {
     }
 }
   
+
+.window {
+    display: block;
+    min-width: 20%;
+    min-height: 40%;
+
+    border: 2px solid lightgray;
+    border-bottom: none;
+    border-radius: 5px;
+
+    background-color: white;
+
+    -webkit-box-shadow: 0px 8px 0px 0px #000000; 
+    box-shadow: 0px 8px 0px 0px #000000;
+
+    position: fixed;
+
+    z-index: 999;
+
+    bottom: 1rem;
+    left: 1rem;
+
+    .titlebar {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 25px;
+
+        /* cursor: move; */
+
+        border-radius: 5px;
+
+        background-color: whitesmoke;
+
+        .close {
+            background-image: url("images/close.svg");
+
+            display: inline;
+            width: 25px;
+            height: 25px;
+
+            transition: filter .2s;
+
+            cursor: pointer;
+
+            &:hover {
+                filter: invert(0.4);
+            }
+        }
+    }
+}
+
+.symbol-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    td, th {
+        text-align: center;
+    }
+
+    tr:not(:last-child) {
+        border-bottom: 1px solid lightgray;
+    }
+
+    td:not(:last-child), th:not(:last-child) {
+        border-right: 1px solid lightgray;
+    }
+}
+
+.tab-bar {
+    display: flex;
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid lightgray;
+        border-bottom: none;
+        background-color: whitesmoke;
+    }
+
+    .tab.active {
+        background-color: white;
+        border-top: 2px solid skyblue;
+        color: black;
+    }
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+    border: 1px solid #ccc;
+}
+
+.tab-content.active {
+    display: block;
+}
