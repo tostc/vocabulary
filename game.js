@@ -41,7 +41,7 @@ async function initGame() {
 
     const symbolTable = document.getElementById("symboltable");
     document.getElementById("table").addEventListener("click", () => {
-        if(settingsDialog.style.display.toLocaleLowerCase() == "none")
+        if(symbolTable.style.display.toLocaleLowerCase() == "none")
             symbolTable.style.display = "block";
         else
             symbolTable.style.display = "none";
