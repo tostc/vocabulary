@@ -108,7 +108,7 @@ function _startRound() {
 
     g_SearchFor = props[Math.floor(Math.random() * props.length)];
 
-    g_Vocabulary.innerHTML = _formatText(g_SelectedVocabulary, display, g_SearchFor);
+    g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
     g_Vocabularies.innerHTML = "";
 
     g_Vocabularies.appendChild(_createSpan(g_SelectedVocabulary, display));
