@@ -172,6 +172,8 @@ body {
         align-items: center;
         justify-content: center;
         word-break: break-all;
+
+        flex-direction: column;
     }
 }
 
