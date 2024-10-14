@@ -101,12 +101,13 @@ function _startRound() {
     g_LastRandom = random;
     g_SelectedVocabulary = g_VocabularJSON[random];
 
-    const props = Object.getOwnPropertyNames(g_SelectedVocabulary);
-    const displayIdx = Math.floor(Math.random() * props.length);
-    const display = props[displayIdx];
-    props.splice(displayIdx, 1);
+    // const props = Object.getOwnPropertyNames(g_SelectedVocabulary);
+    // const displayIdx = Math.floor(Math.random() * props.length);
+    // const display = props[displayIdx];
+    // props.splice(displayIdx, 1);
 
-    g_SearchFor = props[Math.floor(Math.random() * props.length)];
+    const display = g_ShowAlwaysRomaji ? "jp" : "writing";
+    g_SearchFor = "de"; // props[Math.floor(Math.random() * props.length)];
 
     g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
     g_Vocabularies.innerHTML = "";
@@ -114,7 +115,7 @@ function _startRound() {
     g_Vocabularies.appendChild(_createSpan(g_SelectedVocabulary, display));
     const randomBuffer = [random];
 
-    while((g_Vocabularies.children.length < 4) && (randomBuffer.length !== g_VocabularJSON.length)) {
+    while((g_Vocabularies.children.length < 6) && (randomBuffer.length !== g_VocabularJSON.length)) {
         var random2 = Math.floor(Math.random() * g_VocabularJSON.length);
         if(randomBuffer.find(x => x == random2) == undefined) {
             randomBuffer.push(random2);

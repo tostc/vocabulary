@@ -169,6 +169,8 @@ body {
         height: 85%;
         width: 85%;
 
+        flex: 0;
+
         align-items: center;
         justify-content: center;
         word-break: break-all;
@@ -189,9 +191,9 @@ body {
 #vocabularies {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-rows: repeat(3);
     grid-column-gap: 1rem;
-    grid-row-gap: 1rem;
+    grid-row-gap: 0.5rem;
 
     padding-top: 3rem;
     width: 25%;
@@ -206,7 +208,7 @@ body {
 
         transition: transform .2s, background-color .2s, box-shadow .2s;
         cursor: pointer;
-        font-size: 18pt;
+        font-size: 16pt;
         word-break: break-word;
 
         display: flex;
@@ -269,7 +271,7 @@ body {
         width: 50%;
 
         span {
-            font-size: 18pt;
+            font-size: 16pt;
         }
     }
 
