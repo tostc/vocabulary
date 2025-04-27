@@ -12,12 +12,26 @@ var g_SearchFor = "";
 var g_Probabilities = [];
 
 var g_TimerEnabled = false;
+var g_TTSEnabled = false;
 var g_ShowAlwaysRomaji = true;
+var g_ChartJs = null;
+
+const g_DB = new VocabularyDB();
+const g_Date = formatDate(new Date());
 
 const REPEAT_COUNT = 10;
 const REPEAT_COUNT_INV = 1.0 / REPEAT_COUNT;
 
 const TIMER = 10;
+var g_TTS = null;
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
 
 // Initializes the game!
 if (document.readyState === "loading")
@@ -30,6 +44,7 @@ async function initGame() {
     g_Vocabularies = document.getElementById("vocabularies");
     g_ComboElement = document.getElementById("combo");
     g_TimerElement = document.querySelector('.timer-ring-circle')
+    g_TTS = new TTS();
 
     const settingsDialog = document.getElementById("settings-dialog");
     document.getElementById("settings").addEventListener("click", () => {
@@ -47,6 +62,102 @@ async function initGame() {
             symbolTable.style.display = "none";
     });
 
+    const statistics = document.getElementById("statisticsWindow");
+    document.getElementById("statistics").addEventListener("click", async () => {
+        if(statistics.style.display.toLocaleLowerCase() == "none") {
+            statistics.style.display = "block";
+
+            const diagramData = await g_DB.generateDiagramStatistics();
+            const labels = [];
+            const rightAnswers = [];
+            const wrongAnswers = [];
+
+            for (const date in diagramData) {
+                labels.push(date);
+                rightAnswers.push(diagramData[date].successCount);
+                wrongAnswers.push(-diagramData[date].failedCount);
+            }
+
+            console.log(wrongAnswers);
+
+            if(g_ChartJs) {
+                g_ChartJs.destroy();
+                g_ChartJs = null;
+            }
+
+            const ctx = document.getElementById('development').getContext('2d');
+            g_ChartJs = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: labels,
+                  datasets: [
+                    {
+                      label: 'Right answers',
+                      data: rightAnswers,
+                      backgroundColor: 'green',
+                    },
+                    {
+                      label: 'Wrong answers',
+                      data: wrongAnswers,
+                      backgroundColor: 'red',
+                    }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
+                  }
+                }
+            });
+        }
+        else
+            statistics.style.display = "none";
+    });
+
+    const ttsBox = document.getElementById("tts");
+    const voices = document.getElementById("voices");
+    ttsBox.addEventListener("change", () => {
+        g_TTSEnabled = !g_TTSEnabled;
+        voices.disabled = !g_TTSEnabled;
+
+        const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
+        g_SearchFor = "de";
+        g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
+
+        if(g_TTSEnabled)
+            g_Vocabulary.style.cursor = "pointer";
+        else
+            g_Vocabulary.style.cursor = "default";
+    });
+    const ttsInfo = document.getElementById("tts-info");
+
+    voices.addEventListener("change", async () => {
+        g_TTS.selectedVoice = voices.value;
+    });
+
+    // Enables the option for text-to-speech
+    if(g_TTS.hasJapanese()) {
+        ttsInfo.style.display = "none";
+        ttsBox.disabled = false;
+
+        var i = 0;
+        for (const voice of g_TTS.voices) {
+            const option = document.createElement("option");
+            option.textContent = voice.name;
+            option.value = i;
+            voices.appendChild(option);
+            i++;
+        }
+    }
+
+    document.getElementById("vocabulary").addEventListener("click", () => {
+        if(g_TTSEnabled) 
+            g_TTS.speak(g_SelectedVocabulary["writing"]);
+    });
+
     document.getElementById("timer").addEventListener("change", () => {
         g_TimerEnabled = !g_TimerEnabled;
         if(g_TimerEnabled)
@@ -58,12 +169,39 @@ async function initGame() {
 
     document.getElementById("romaji").addEventListener("change", () => {
         g_ShowAlwaysRomaji = !g_ShowAlwaysRomaji;
+
+        const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
+        g_SearchFor = "de";
+        g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
     });
 
     g_ComboElement.style.display = "none";
 
-    g_VocabularJSON = await fetch("vocabularies.json").then(res => res.json());
+    await g_DB.open("vocabs");
+    await g_DB.migrate();
+
+    g_VocabularJSON = await g_DB.getAllVocabs();
     g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+
+    const select = document.getElementById("categories");
+    const categories = await g_DB.getAllCategories();
+    categories.sort((a, b) => a.de - b.de);
+    for (const categorie of categories) {
+        const option = document.createElement("option");
+        option.value = categorie.id;
+        option.innerHTML = categorie.de;
+        select.appendChild(option);
+    }
+
+    select.addEventListener("change", async () => {
+        if(select.value == "-1")
+            g_VocabularJSON = await g_DB.getAllVocabs();
+        else
+            g_VocabularJSON = await g_DB.getVocabsByCategory(+select.value);
+
+        g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+        _startRound();
+    });
 
     _startRound();
 }
@@ -84,8 +222,12 @@ function _pickRandomVocabularyIndex() {
 }
 
 function _formatText(vocabulary, display, searchfor) {
-    if(g_ShowAlwaysRomaji && (((display == "jp") || (display == "writing")) && (searchfor != "jp" && searchfor != "writing"))) {
-        return `<div style="text-align:center">${vocabulary["jp"]}</div><div style="text-align:center">${vocabulary["writing"]}</div>`;
+    if(g_ShowAlwaysRomaji && (((display == "romaji") || (display == "writing")) && (searchfor != "romaji" && searchfor != "writing"))) {
+        var audioButton = "";
+        if(g_TTSEnabled)
+            audioButton = '<span class="play-tts"></span>';
+        
+        return `${audioButton}<div style="text-align:center">${vocabulary["romaji"]}</div><div style="text-align:center">${vocabulary["writing"]}</div>`;
     }
 
     return vocabulary[display];
@@ -106,7 +248,7 @@ function _startRound() {
     // const display = props[displayIdx];
     // props.splice(displayIdx, 1);
 
-    const display = g_ShowAlwaysRomaji ? "jp" : "writing";
+    const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
     g_SearchFor = "de"; // props[Math.floor(Math.random() * props.length)];
 
     g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
@@ -124,6 +266,9 @@ function _startRound() {
     }
 
     _shuffleChildren(g_Vocabularies);
+
+    if(g_TTSEnabled)
+        g_TTS.speak(g_SelectedVocabulary["writing"]);
 
     if(g_TimerEnabled)
         _startTimer();
@@ -187,15 +332,44 @@ function _createSpan(vocabulary, display) {
         if(g_SelectedVocabulary[g_SearchFor] == span.dataset["text"]) {
             g_Combo++;
             span.classList.add("green-gradiant");
-            // span.style.backgroundColor = "green";
+
+            g_DB.getStatistic(g_Date, g_SelectedVocabulary.id).then(
+                statistic => {
+                    if(!statistic) {
+                        statistic = {
+                            date: g_Date,
+                            vocabId: g_SelectedVocabulary.id,
+                            successCount: 0,
+                            failedCount: 0,
+                            categoryId: g_SelectedVocabulary.categoryId
+                        }
+                    }
+                    statistic.successCount++;
+                    g_DB.patchStatistic(statistic);
+                }
+            )
         }
         else {
-            // span.style.backgroundColor = "red";
+            g_DB.getStatistic(g_Date, g_SelectedVocabulary.id).then(
+                statistic => {
+                    if(!statistic) {
+                        statistic = {
+                            date: g_Date,
+                            vocabId: g_SelectedVocabulary.id,
+                            successCount: 0,
+                            failedCount: 0,
+                            categoryId: g_SelectedVocabulary.categoryId
+                        }
+                    }
+                    statistic.failedCount++;
+                    g_DB.patchStatistic(statistic);
+                }
+            )
+
             span.classList.add("red-gradiant");
             for (let i = 0; i < childrenArray.length; i++) {
                 const element = childrenArray[i];
                 if(element.dataset["text"] === g_SelectedVocabulary[g_SearchFor]) {
-                    // element.style.backgroundColor = "green";
                     element.classList.add("green-gradiant");
                     break;
                 }

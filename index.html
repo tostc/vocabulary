@@ -5,10 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voc</title>
     <link rel="stylesheet" href="style.css">
+    <script src="third-party/chartjs.min.js"></script>
+    <script src="db.js"></script>
+    <script src="tts.js"></script>
     <script src="game.js"></script>
     <script src="window.js"></script>
 </head>
 <body>
+    <!-- Statisticstable window -->
+    <div id="statisticsWindow" class="window" style="display: none;left: 79%;bottom: 1rem; height: 217px !important; min-height: unset;">
+        <div class="titlebar">
+            <span class="close"></span>
+        </div>
+
+        <canvas id="development"></canvas>
+    </div>
+
+    <!-- Symboltable window -->
     <div id="symboltable" class="window" style="display: none;left: 1rem;bottom: 1rem;">
         <div class="titlebar">
             <span class="close"></span>
@@ -235,6 +248,10 @@
     <div class="menubar">
         <div id="settings"></div>
         <div id="table"></div>
+        <div id="statistics"></div>
+        <select id="categories">
+            <option value="-1">Alle</option>
+        </select>
     </div>
 
     <div id="settings-dialog" style="display: none;">
@@ -247,6 +264,14 @@
             <input id="romaji" type="checkbox" checked>
             <label for="romaji">Enable Romaji</label>
         </div>
+
+        <div class="checkbox">
+            <input id="tts" type="checkbox" disabled>
+            <label for="tts">Enable TTS</label>
+        </div>
+
+        <select id="voices" disabled></select>
+        <div id="tts-info" style="color: rgb(97, 8, 8);">No japanese sound synthesizer installed!</div>
     </div>
 
     <div class="timer-container">
