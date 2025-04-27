@@ -357,7 +357,7 @@ body {
     }
 }
 
-.symbol-table {
+.symbol-table, .statistics-table {
     width: 100%;
     border-collapse: collapse;
 
@@ -371,6 +371,23 @@ body {
 
     td:not(:last-child), th:not(:last-child) {
         border-right: 1px solid lightgray;
+    }
+}
+
+.statistics-table {
+    td, th {
+        text-align: left;
+    }
+
+    tbody {
+        tr {
+            transition: background-color .2s;
+        }
+
+        tr:hover {
+            cursor: pointer;
+            background-color: aliceblue;
+        }
     }
 }
 

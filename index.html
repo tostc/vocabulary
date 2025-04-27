@@ -7,18 +7,59 @@
     <link rel="stylesheet" href="style.css">
     <script src="third-party/chartjs.min.js"></script>
     <script src="db.js"></script>
+    <script src="tab.js"></script>
     <script src="tts.js"></script>
     <script src="game.js"></script>
     <script src="window.js"></script>
 </head>
 <body>
+    <!-- height: 217px !important; min-height: unset; -->
     <!-- Statisticstable window -->
-    <div id="statisticsWindow" class="window" style="display: none;left: 79%;bottom: 1rem; height: 217px !important; min-height: unset;">
+    <div id="statisticsWindow" class="window" style="display: none;left: 79%;bottom: 1rem;">
         <div class="titlebar">
             <span class="close"></span>
         </div>
 
-        <canvas id="development"></canvas>
+        <div class="tab-bar">
+            <div class="tab active">Diagram</div>
+            <div class="tab">Categories</div>
+            <div class="tab">Vocabularies</div>
+        </div>
+
+        <div class="tab-content active">
+            <canvas id="development"></canvas>
+        </div>
+
+        <div class="tab-content" style="max-height: 400px; overflow-y: auto;">
+            <table id="category-stat" class="statistics-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Correct</th>
+                        <th>Wrong</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-content" style="max-height: 400px; overflow-y: auto;">
+            <table id="vocab-stat" class="statistics-table">
+                <thead>
+                    <tr>
+                        <th>Vocabulary</th>
+                        <th>Translation</th>
+                        <th>Correct</th>
+                        <th>Wrong</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Symboltable window -->
@@ -28,11 +69,11 @@
         </div>
 
         <div class="tab-bar">
-            <div class="tab active" onclick="changeTab(event, 'HiraganaTab')">Hiragana</div>
-            <div class="tab" onclick="changeTab(event, 'KatakanaTab')">Katakana</div>
+            <div class="tab active">Hiragana</div>
+            <div class="tab">Katakana</div>
         </div>
 
-        <div id="HiraganaTab" class="tab-content active">
+        <div class="tab-content active">
             <table class="symbol-table">
                 <thead>
                     <tr>
@@ -137,8 +178,8 @@
             </table>
         </div>
 
-        <div id="KatakanaTab" class="tab-content">
-            <table  class="symbol-table">
+        <div class="tab-content">
+            <table class="symbol-table">
                 <thead>
                     <tr>
                         <th></th>

@@ -144,6 +144,14 @@ function VocabularyDB() {
         });
     }
 
+    this.getCategory = categoryId => {
+        return this._getObject("categories", categoryId);
+    }
+
+    this.getVocab = vocabId => {
+        return this._getObject("vocabs", vocabId);
+    }
+
     this._getMigration = migration => {
         return this._getObject("migrations", migration);
     }
@@ -245,6 +253,64 @@ function VocabularyDB() {
                     
                     grouped[date].successCount += record.successCount;
                     grouped[date].failedCount += record.failedCount;
+            
+                    cursor.continue();
+                } else {
+                    resolve(grouped);
+                }
+            };
+          
+              request.onerror = () => reject('Failed to read statistics');
+        });
+    }
+
+    this.generateCategoryStatistics = () => {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction("statistics", 'readwrite');
+            const store = tx.objectStore("statistics");
+
+            const grouped = {};
+            const request = store.openCursor();
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const record = cursor.value;
+                    const categoryId = record.categoryId;
+            
+                    if (!grouped[categoryId])
+                        grouped[categoryId] = {successCount: 0, failedCount: 0};
+                    
+                    grouped[categoryId].successCount += record.successCount;
+                    grouped[categoryId].failedCount += record.failedCount;
+            
+                    cursor.continue();
+                } else {
+                    resolve(grouped);
+                }
+            };
+          
+              request.onerror = () => reject('Failed to read statistics');
+        });
+    }
+
+    this.generateVocabStatistics = () => {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction("statistics", 'readwrite');
+            const store = tx.objectStore("statistics");
+
+            const grouped = {};
+            const request = store.openCursor();
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const record = cursor.value;
+                    const vocabId = record.vocabId;
+            
+                    if (!grouped[vocabId])
+                        grouped[vocabId] = {successCount: 0, failedCount: 0};
+                    
+                    grouped[vocabId].successCount += record.successCount;
+                    grouped[vocabId].failedCount += record.failedCount;
             
                     cursor.continue();
                 } else {

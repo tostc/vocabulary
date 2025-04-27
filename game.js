@@ -45,6 +45,45 @@ async function initGame() {
     g_ComboElement = document.getElementById("combo");
     g_TimerElement = document.querySelector('.timer-ring-circle')
     g_TTS = new TTS();
+    g_TTS.loadVoices(() => {
+        const ttsBox = document.getElementById("tts");
+        const voices = document.getElementById("voices");
+        ttsBox.addEventListener("change", ev => {
+            g_TTSEnabled = !g_TTSEnabled;
+            voices.disabled = !g_TTSEnabled;
+    
+            const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
+            g_SearchFor = "de";
+            g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
+    
+            if(g_TTSEnabled)
+                g_Vocabulary.style.cursor = "pointer";
+            else
+                g_Vocabulary.style.cursor = "default";
+
+            ev.stopImmediatePropagation();
+        });
+        const ttsInfo = document.getElementById("tts-info");
+    
+        voices.addEventListener("change", async () => {
+            g_TTS.selectedVoice = voices.value;
+        });
+    
+        // Enables the option for text-to-speech
+        if(g_TTS.hasJapanese()) {
+            ttsInfo.style.display = "none";
+            ttsBox.disabled = false;
+    
+            var i = 0;
+            for (const voice of g_TTS.voices) {
+                const option = document.createElement("option");
+                option.textContent = voice.name;
+                option.value = i;
+                voices.appendChild(option);
+                i++;
+            }
+        }
+    });
 
     const settingsDialog = document.getElementById("settings-dialog");
     document.getElementById("settings").addEventListener("click", () => {
@@ -55,6 +94,8 @@ async function initGame() {
     });
 
     const symbolTable = document.getElementById("symboltable");
+    new Tab(symbolTable);
+
     document.getElementById("table").addEventListener("click", () => {
         if(symbolTable.style.display.toLocaleLowerCase() == "none")
             symbolTable.style.display = "block";
@@ -63,9 +104,37 @@ async function initGame() {
     });
 
     const statistics = document.getElementById("statisticsWindow");
+    new Tab(statistics);
+
+    await g_DB.open("vocabs");
+    await g_DB.migrate();
+
+    const categorySelect = document.getElementById("categories");
+    const categories = await g_DB.getAllCategories();
+    categories.sort((a, b) => a.de - b.de);
+    for (const categorie of categories) {
+        const option = document.createElement("option");
+        option.value = categorie.id;
+        option.innerHTML = categorie.de;
+        categorySelect.appendChild(option);
+    }
+
+    categorySelect.addEventListener("change", async () => {
+        if(categorySelect.value == "-1")
+            g_VocabularJSON = await g_DB.getAllVocabs();
+        else
+            g_VocabularJSON = await g_DB.getVocabsByCategory(+categorySelect.value);
+
+        g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+        _startRound();
+    });
+
     document.getElementById("statistics").addEventListener("click", async () => {
         if(statistics.style.display.toLocaleLowerCase() == "none") {
             statistics.style.display = "block";
+
+            await _buildCategoryStatisticsTable(categorySelect);
+            await _buildVocabStatisticsTable();
 
             const diagramData = await g_DB.generateDiagramStatistics();
             const labels = [];
@@ -117,91 +186,36 @@ async function initGame() {
             statistics.style.display = "none";
     });
 
-    const ttsBox = document.getElementById("tts");
-    const voices = document.getElementById("voices");
-    ttsBox.addEventListener("change", () => {
-        g_TTSEnabled = !g_TTSEnabled;
-        voices.disabled = !g_TTSEnabled;
-
-        const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
-        g_SearchFor = "de";
-        g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
-
-        if(g_TTSEnabled)
-            g_Vocabulary.style.cursor = "pointer";
-        else
-            g_Vocabulary.style.cursor = "default";
-    });
-    const ttsInfo = document.getElementById("tts-info");
-
-    voices.addEventListener("change", async () => {
-        g_TTS.selectedVoice = voices.value;
-    });
-
-    // Enables the option for text-to-speech
-    if(g_TTS.hasJapanese()) {
-        ttsInfo.style.display = "none";
-        ttsBox.disabled = false;
-
-        var i = 0;
-        for (const voice of g_TTS.voices) {
-            const option = document.createElement("option");
-            option.textContent = voice.name;
-            option.value = i;
-            voices.appendChild(option);
-            i++;
-        }
-    }
-
     document.getElementById("vocabulary").addEventListener("click", () => {
         if(g_TTSEnabled) 
             g_TTS.speak(g_SelectedVocabulary["writing"]);
     });
 
-    document.getElementById("timer").addEventListener("change", () => {
+    document.getElementById("timer").addEventListener("change", ev => {
         g_TimerEnabled = !g_TimerEnabled;
         if(g_TimerEnabled)
             _startTimer();
         else {
             _stopTimer();
         }
+
+        ev.stopImmediatePropagation();
     });
 
-    document.getElementById("romaji").addEventListener("change", () => {
+    document.getElementById("romaji").addEventListener("change", ev => {
         g_ShowAlwaysRomaji = !g_ShowAlwaysRomaji;
 
         const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
         g_SearchFor = "de";
         g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
+
+        ev.stopImmediatePropagation();
     });
 
     g_ComboElement.style.display = "none";
 
-    await g_DB.open("vocabs");
-    await g_DB.migrate();
-
     g_VocabularJSON = await g_DB.getAllVocabs();
     g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
-
-    const select = document.getElementById("categories");
-    const categories = await g_DB.getAllCategories();
-    categories.sort((a, b) => a.de - b.de);
-    for (const categorie of categories) {
-        const option = document.createElement("option");
-        option.value = categorie.id;
-        option.innerHTML = categorie.de;
-        select.appendChild(option);
-    }
-
-    select.addEventListener("change", async () => {
-        if(select.value == "-1")
-            g_VocabularJSON = await g_DB.getAllVocabs();
-        else
-            g_VocabularJSON = await g_DB.getVocabsByCategory(+select.value);
-
-        g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
-        _startRound();
-    });
 
     _startRound();
 }
@@ -218,7 +232,7 @@ function _pickRandomVocabularyIndex() {
         }
     }
 
-    return 0;
+    return null;
 }
 
 function _formatText(vocabulary, display, searchfor) {
@@ -237,19 +251,17 @@ function _startRound() {
     _stopTimer();
 
     // Pick random vocabulary
-    var random = _pickRandomVocabularyIndex();//Math.floor(Math.random() * g_VocabularJSON.length);
-    while(random == g_LastRandom)
-        random = _pickRandomVocabularyIndex();//Math.floor(Math.random() * g_VocabularJSON.length);
+    var random = _pickRandomVocabularyIndex() || 0;
+    while(random == g_LastRandom) {
+        random = _pickRandomVocabularyIndex();
+        if(random == null)
+            g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+    }
     g_LastRandom = random;
     g_SelectedVocabulary = g_VocabularJSON[random];
 
-    // const props = Object.getOwnPropertyNames(g_SelectedVocabulary);
-    // const displayIdx = Math.floor(Math.random() * props.length);
-    // const display = props[displayIdx];
-    // props.splice(displayIdx, 1);
-
     const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
-    g_SearchFor = "de"; // props[Math.floor(Math.random() * props.length)];
+    g_SearchFor = "de";
 
     g_Vocabulary.innerHTML = "<div>" + _formatText(g_SelectedVocabulary, display, g_SearchFor) + "</div>";
     g_Vocabularies.innerHTML = "";
@@ -425,23 +437,54 @@ function setProgress(percent) {
     g_TimerElement.style.strokeDashoffset = offset;
 }
 
-function changeTab(event, name) {
-    const tabContents = Array.from(document.getElementsByClassName("tab-content"));
-    
-    // Hide all Tabs
-    for (const tabContent of tabContents) {
-        tabContent.style.display = "none";
-        tabContent.classList.remove("active");
+async function _buildCategoryStatisticsTable(categorySelect) {
+    const tableData = await g_DB.generateCategoryStatistics();
+    const tableList = [];
+    for (const categoryId in tableData) {
+        tableList.push(
+            {
+                categoryId: categoryId,
+                categoryName: (await g_DB.getCategory(+categoryId)).de,
+                successCount: tableData[categoryId].successCount,
+                failedCount: tableData[categoryId].failedCount,
+                diff: tableData[categoryId].successCount - tableData[categoryId].failedCount
+            }
+        )
     }
+    tableList.sort((a, b) => a.diff - b.diff);
+    const tableBody = document.querySelector("#category-stat").querySelector("tbody");
+    for (const element of tableList) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${element.categoryName}</td><td>${element.successCount}</td><td>${element.failedCount}</td>`;
+        row.onclick = () => {
+            categorySelect.value = element.categoryId;
+            categorySelect.dispatchEvent(new Event("change"));
+        };
 
-    // All tabs are incative
-    const tabs = Array.from(document.getElementsByClassName("tab"));
-    for (const tab of tabs)
-        tab.classList.remove("active");
+        tableBody.appendChild(row);
+    }
+}
 
-    const tab = document.getElementById(name);
-    tab.style.display = "block";
-    tab.classList.add("active");
-
-    event.currentTarget.classList.add("active");
+async function _buildVocabStatisticsTable() {
+    const tableData = await g_DB.generateVocabStatistics();
+    const tableList = [];
+    for (const vocabId in tableData) {
+        const vocab = await g_DB.getVocab(+vocabId);
+        tableList.push(
+            {
+                vocab: vocab.romaji + `(${vocab.writing})`,
+                translation: vocab.de,
+                successCount: tableData[vocabId].successCount,
+                failedCount: tableData[vocabId].failedCount,
+                diff: tableData[vocabId].successCount - tableData[vocabId].failedCount
+            }
+        )
+    }
+    tableList.sort((a, b) => a.diff - b.diff);
+    const tableBody = document.querySelector("#vocab-stat").querySelector("tbody");
+    for (const element of tableList) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${element.vocab}</td><td>${element.translation}</td><td>${element.successCount}</td><td>${element.failedCount}</td>`;
+        tableBody.appendChild(row);
+    }
 }
