@@ -56,16 +56,30 @@ function VocabularyDB() {
             const migration = await this._getMigration(element);
             if(!migration) {
                 const migration = await fetch("migrations/" + element).then(res => res.json());
-                for (const category of migration.categories)
+                for (const category of migration.categories || [])
                     await this.patchCategory(category);
 
-                for (const vocab of migration.vocabs)
+                for (const vocab of migration.vocabs || [])
                     await this.patchVocab(vocab);
+
+                for (const deletedVocab of migration.deletedVocabs || [])
+                    await this._deleteObject("vocabs", deletedVocab.id);
 
                 await this._saveMigration({name: element});
             }
         }
     }
+
+    this._deleteObject = (objectStore, obj) => {
+        return new Promise((resolve, reject) => {
+            const tx = this.db.transaction(objectStore, 'readwrite');
+            const store = tx.objectStore(objectStore);
+
+            const request = store.delete(obj);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(objectStore + " couldn't be deleted");
+        });
+    };
 
     this._patchObject = (objectStore, obj) => {
         return new Promise((resolve, reject) => {

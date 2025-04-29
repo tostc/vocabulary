@@ -4,12 +4,11 @@ var g_ComboElement = null;
 var g_TimerElement = null;
 var g_VocabularJSON = [];
 var g_SelectedVocabulary = {};
-var g_LastRandom = -1;
 var g_Combo = 0;
 var g_Interval = null;
 var g_Time = 0;
 var g_SearchFor = "";
-var g_Probabilities = [];
+var g_Cursor = 0;
 
 var g_TimerEnabled = false;
 var g_TTSEnabled = false;
@@ -18,9 +17,6 @@ var g_ChartJs = null;
 
 const g_DB = new VocabularyDB();
 const g_Date = formatDate(new Date());
-
-const REPEAT_COUNT = 10;
-const REPEAT_COUNT_INV = 1.0 / REPEAT_COUNT;
 
 const TIMER = 10;
 var g_TTS = null;
@@ -125,7 +121,8 @@ async function initGame() {
         else
             g_VocabularJSON = await g_DB.getVocabsByCategory(+categorySelect.value);
 
-        g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+        _shuffleArray(g_VocabularJSON);
+        g_Cursor = 0;
         _startRound();
     });
 
@@ -215,24 +212,10 @@ async function initGame() {
     g_ComboElement.style.display = "none";
 
     g_VocabularJSON = await g_DB.getAllVocabs();
-    g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
+    _shuffleArray(g_VocabularJSON);
+    g_Cursor = 0;
 
     _startRound();
-}
-
-function _pickRandomVocabularyIndex() {
-    const totalProbability = g_Probabilities.reduce((prev, cur) => prev + cur, 0);
-
-    var randomPropability = Math.random() * totalProbability;
-    for (let i = 0; i < g_Probabilities.length; i++) {
-        randomPropability -= g_Probabilities[i];
-        if(randomPropability < 0) {
-            g_Probabilities[i] = Math.max(g_Probabilities[i] - REPEAT_COUNT_INV, 0);
-            return i;
-        }
-    }
-
-    return null;
 }
 
 function _formatText(vocabulary, display, searchfor) {
@@ -249,16 +232,10 @@ function _formatText(vocabulary, display, searchfor) {
 
 function _startRound() {
     _stopTimer();
-
-    // Pick random vocabulary
-    var random = _pickRandomVocabularyIndex() || 0;
-    while(random == g_LastRandom) {
-        random = _pickRandomVocabularyIndex();
-        if(random == null)
-            g_Probabilities = new Array(g_VocabularJSON.length).fill(1);
-    }
-    g_LastRandom = random;
-    g_SelectedVocabulary = g_VocabularJSON[random];
+    
+    var random = g_Cursor;
+    g_SelectedVocabulary = g_VocabularJSON[g_Cursor];
+    g_Cursor = (g_Cursor + 1) % g_VocabularJSON.length;
 
     const display = g_ShowAlwaysRomaji ? "romaji" : "writing";
     g_SearchFor = "de";
@@ -294,8 +271,6 @@ function _startTimer() {
         g_Time--;
         if(g_Time <= 0) {
             _stopTimer();
-
-            g_Probabilities[g_LastRandom] += REPEAT_COUNT_INV;
 
             var childrenArray = Array.from(g_Vocabularies.children);
             for (let i = 0; i < childrenArray.length; i++) {
@@ -388,7 +363,6 @@ function _createSpan(vocabulary, display) {
             }
 
             wrongAnswer = true;
-            g_Probabilities[g_LastRandom] += REPEAT_COUNT_INV;
             g_Combo = 0;
         }
 
@@ -424,6 +398,14 @@ function _shuffleChildren(parent) {
     }
 
     childrenArray.forEach(child => parent.appendChild(child));
+}
+
+function _shuffleArray(array) {   
+    // Fisher-Yates (Knuth) shuffle algorithm
+    for (var i = array.length - 1; i >= 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
 }
 
 function setProgress(percent) {

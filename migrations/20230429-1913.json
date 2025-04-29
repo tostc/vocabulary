@@ -1,0 +1,13 @@
+{
+    "vocabs": [
+        { "id": 417, "de": "Küche (Englisch)" }
+    ],
+
+    "deletedVocabs": [
+        { "id": 17 },
+        { "id": 50 },
+        { "id": 75 },
+        { "id": 76 },
+        { "id": 88 }
+    ]
+}
