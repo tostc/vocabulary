@@ -1,0 +1,18 @@
+{
+    "vocabs": [
+        { "id": 255, "romaji": "hodō" },
+        { "id": 87, "romaji": "gōruden wīku" },
+        { "id": 388, "romaji": "maigo" },
+        { "id": 380, "romaji": "gifu" },
+        { "id": 381, "romaji": "gibo" },
+        { "id": 382, "romaji": "gikyōdai" },
+        { "id": 383, "romaji": "gishimai" },
+        { "id": 390, "romaji": "gimusuko" },
+        { "id": 391, "romaji": "gijō" }
+    ],
+    "deletedVocabs": [
+        { "id": 419 },
+        { "id": 432 },
+        { "id": 433 }
+    ]
+}

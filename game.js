@@ -454,8 +454,8 @@ async function _buildVocabStatisticsTable() {
         const vocab = await g_DB.getVocab(+vocabId);
         tableList.push(
             {
-                vocab: vocab.romaji + `(${vocab.writing})`,
-                translation: vocab.de,
+                vocab: (vocab?.romaji || "") + `(${(vocab?.writing || "")})`,
+                translation: vocab?.de || "",
                 successCount: tableData[vocabId].successCount,
                 failedCount: tableData[vocabId].failedCount,
                 diff: tableData[vocabId].successCount - tableData[vocabId].failedCount
